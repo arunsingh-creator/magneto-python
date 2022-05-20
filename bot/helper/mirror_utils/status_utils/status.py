@@ -1,6 +1,3 @@
-# Generic status class. All other status classes must inherit this class
-
-
 class Status:
 
     def progress(self):
