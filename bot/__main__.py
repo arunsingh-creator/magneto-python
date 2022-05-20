@@ -1,10 +1,8 @@
 import os
 import shutil, psutil
 import signal
-
 from sys import executable
 import time
-
 from telegram.ext import CommandHandler
 from bot import bot, dispatcher, updater, botStartTime
 from bot.helper.ext_utils import fs_utils
@@ -13,45 +11,67 @@ from bot.helper.telegram_helper.message_utils import *
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from .helper.telegram_helper.filters import CustomFilters
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror, clone, watch, delete
-
 from pyrogram import idle
 from bot import app
 
 
 def stats(update, context):
-    currentTime = get_readable_time(time.time() - botStartTime)
-    total, used, free = shutil.disk_usage('.')
+    currentTime = get_readable_time(time() - botStartTime)
+    osUptime = get_readable_time(time() - boot_time())
+    total, used, free, disk= disk_usage('/')
     total = get_readable_file_size(total)
     used = get_readable_file_size(used)
     free = get_readable_file_size(free)
-    sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
-    recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
-    cpuUsage = psutil.cpu_percent(interval=0.5)
-    memory = psutil.virtual_memory().percent
-    disk = psutil.disk_usage('/').percent
-    stats = f'<b>Bot Uptime:</b> {currentTime}\n' \
-            f'<b>Total disk space:</b> {total}\n' \
-            f'<b>Used:</b> {used}  ' \
-            f'<b>Free:</b> {free}\n\n' \
-            f'📊Data Usage📊\n<b>Upload:</b> {sent}\n' \
-            f'<b>Down:</b> {recv}\n\n' \
-            f'<b>CPU:</b> {cpuUsage}% ' \
-            f'<b>RAM:</b> {memory}% ' \
-            f'<b>Disk:</b> {disk}%'
+    sent = get_readable_file_size(net_io_counters().bytes_sent)
+    recv = get_readable_file_size(net_io_counters().bytes_recv)
+    cpuUsage = cpu_percent(interval=0.5)
+    p_core = cpu_count(logical=False)
+    t_core = cpu_count(logical=True)
+    swap = swap_memory()
+    swap_p = swap.percent
+    swap_t = get_readable_file_size(swap.total)
+    memory = virtual_memory()
+    mem_p = memory.percent
+    mem_t = get_readable_file_size(memory.total)
+    mem_a = get_readable_file_size(memory.available)
+    mem_u = get_readable_file_size(memory.used)
+    stats = f'<b>•• ━━ Red Club X Mirror Bot ━━ ••</b>\n\n'\
+            f'<b>⏰Bot Uptime:</b> {currentTime}\n'\
+            f'<b>☬OS Uptime:</b> {osUptime}\n\n'\
+            f'<b>•• DISK INFO ••</b> \n'\
+            f'<b>📁Total Disk Space:</b> {total}\n'\
+            f'<b>☠Used:</b> {used} | <b>✨Free:</b> {free}\n\n'\
+            f'<b>•• DATA USAGE ••</b> \n'\
+            f'<b>📤Upload:</b> {sent}\n'\
+            f'<b>📥Download:</b> {recv}\n\n'\
+            f'<b>•• SERVER STATS ••</b> \n'\
+            f'<b>🖥️CPU:</b> {cpuUsage}%\n'\
+            f'<b>📦RAM:</b> {mem_p}%\n'\
+            f'<b>📀DISK:</b> {disk}%\n\n'\
+            f'<b>➤Physical Cores:</b> {p_core}\n'\
+            f'<b>☞Total Cores:</b> {t_core}\n\n'\
+            f'<b>✨SWAP:</b> {swap_t} | <b>🤗Used:</b> {swap_p}%\n'\
+            f'<b>💿Memory Total:</b> {mem_t}\n'\
+            f'<b>📀Memory Free:</b> {mem_a}\n'\
+            f'<b>💿Memory Used:</b> {mem_u}\n'
+    keyboard = [[InlineKeyboardButton("CLOSE", callback_data="stats_close")]]
     sendMessage(stats, context.bot, update)
 
 
 def start(update, context):
+    buttons = ButtonMaker()
+    buttons.buildbutton("Main Channel", "https://t.me/redxclub")
+    buttons.buildbutton("Mirror Group", "https://t.me/+GAXDf5pR4vk0ZmM1")
+    reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
+    if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
     start_string = f'''
-This is a bot which can mirror all your links to Google drive!
-Type /{BotCommands.HelpCommand} to get a list of available commands
+This is a bot only work in @redxclub mirror group join the group to use it
 '''
     sendMessage(start_string, context.bot, update)
 
 
 def restart(update, context):
-    restart_message = sendMessage("Restarting, Please wait!", context.bot, update)
-    # Save restart message ID and chat ID in order to edit it after restarting
+    restart_message = sendMessage("Restarting, Please wait Till Then!", context.bot, update)
     with open(".restartmsg", "w") as f:
         f.truncate(0)
         f.write(f"{restart_message.chat.id}\n{restart_message.message_id}\n")
@@ -106,7 +126,7 @@ def main():
     if os.path.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        bot.edit_message_text("Restarted successfully!", chat_id, msg_id)
+        bot.edit_message_text("Restarted successfully Start F*cking the Bot!", chat_id, msg_id)
         os.remove(".restartmsg")
 
     start_handler = CommandHandler(BotCommands.StartCommand, start,
