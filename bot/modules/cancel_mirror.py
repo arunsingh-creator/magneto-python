@@ -1,11 +1,9 @@
 from telegram.ext import CommandHandler
-
 from bot import download_dict, dispatcher, download_dict_lock, DOWNLOAD_DIR
 from bot.helper.ext_utils.fs_utils import clean_download
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import *
-
 from time import sleep
 from bot.helper.ext_utils.bot_utils import getDownloadByGid, MirrorStatus
 
@@ -31,7 +29,7 @@ def cancel_mirror(update, context):
         if mirror_message is None or mirror_message.message_id not in keys:
             if BotCommands.MirrorCommand in update.message.text or \
                     BotCommands.TarMirrorCommand in update.message.text:
-                msg = "Mirror already have been cancelled"
+                msg = "Mirror already have been cancelled What are you doing"
                 sendMessage(msg, context.bot, update)
                 return
             else:
@@ -39,14 +37,14 @@ def cancel_mirror(update, context):
                 sendMessage(msg, context.bot, update)
                 return
     if dl.status() == "Uploading":
-        sendMessage("Upload in Progress, Don't Cancel it.", context.bot, update)
+        sendMessage("Upload in Progress, Don't Cancel it Till then wait.", context.bot, update)
         return
     elif dl.status() == "Archiving":
-        sendMessage("Archival in Progress, Don't Cancel it.", context.bot, update)
+        sendMessage("Archival in Progress, Don't Cancel it Till then wait.", context.bot, update)
         return
     else:
         dl.download().cancel_download()
-    sleep(1)  # Wait a Second For Aria2 To free Resources.
+    sleep(1)  
     clean_download(f'{DOWNLOAD_DIR}{mirror_message.message_id}/')
 
 
